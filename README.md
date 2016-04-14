@@ -8,3 +8,7 @@ A🦄custom🦄keyboard🦄that🦄does🦄this
 Or🐺this
 
 <img style="border: gray 0px solid;" width="320px" src="./ScreenShot2.png"></img>
+
+Or👏other👏things
+
+<img style="border: gray 0px solid;" width="320px" src="./Screenshot-portrait.png"></img>
