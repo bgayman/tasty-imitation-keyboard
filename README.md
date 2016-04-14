@@ -11,4 +11,4 @@ Or🐺this
 
 Or👏other👏things
 
-<img style="border: gray 0px solid;" width="320px" src="./Screenshot-portrait.png"></img>
+<img style="border: gray 0px solid;" width="320px" src="./Screenshot-Portrait.png"></img>
