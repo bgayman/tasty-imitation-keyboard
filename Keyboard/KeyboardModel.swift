@@ -28,7 +28,19 @@ enum ShiftState {
 }
 
 class Keyboard {
+    var spaceKey:String{
+        
+        if let space = NSUserDefaults.standardUserDefaults().objectForKey(kSpaceKey) as? String{
+            return space
+        }
+        return "🦄"
+        
+    }
     var pages: [Page]
+    
+    var possibleSpaceKeys:[String]{
+        return ["👏","🤖","💩","🙌","👌","🤑","💅","🐺","🍌","⌚️","📱","💸"];
+    }
     
     init() {
         self.pages = []
@@ -42,6 +54,18 @@ class Keyboard {
         }
         
         self.pages[page].addKey(key, row: row)
+    }
+    
+    func setSpaceKeyToRandomChar(){
+        let index = abs(Int(arc4random())) % self.possibleSpaceKeys.count
+        let spaceKey = String(self.possibleSpaceKeys[index])
+        NSUserDefaults.standardUserDefaults().setObject(spaceKey, forKey: kSpaceKey)
+        NSUserDefaults.standardUserDefaults().synchronize()
+    }
+    
+    func setSpaceKeyToUnicorn(){
+        NSUserDefaults.standardUserDefaults().setObject("🦄", forKey: kSpaceKey)
+        NSUserDefaults.standardUserDefaults().synchronize()
     }
 }
 

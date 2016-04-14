@@ -34,7 +34,8 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
         get {
             return [
                 ("General Settings", [kAutoCapitalization, kPeriodShortcut, kKeyboardClicks]),
-                ("Extra Settings", [kSmallLowercase])
+                ("Extra Settings", [kSmallLowercase]),
+                (kSpaceKey,[kSpaceKey])
             ]
         }
     }
@@ -44,7 +45,8 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
                 kAutoCapitalization: "Auto-Capitalization",
                 kPeriodShortcut:  "“.” Shortcut",
                 kKeyboardClicks: "Keyboard Clicks",
-                kSmallLowercase: "Allow Lowercase Key Caps"
+                kSmallLowercase: "Allow Lowercase Key Caps",
+                kSpaceKey:"Space Key"
             ]
         }
     }
@@ -55,6 +57,9 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
                 kSmallLowercase: "Changes your key caps to lowercase when Shift is off, making it easier to tell what mode you are in."
             ]
         }
+    }
+    var possibleSpaceKeys:[String]{
+        return ["🦄","👏","🤖","💩","🙌","👌","🤑","💅","🐺","🍌","⌚️","📱","💸","😙","😺","🙅","🐼","🐷","🍟","🍺","🚽","❤️","🚇"];
     }
     
     required init(globalColors: GlobalColors.Type?, darkMode: Bool, solidColorMode: Bool) {
@@ -89,7 +94,7 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
         self.tableView?.registerClass(DefaultSettingsTableViewCell.self, forCellReuseIdentifier: "cell")
         self.tableView?.estimatedRowHeight = 44;
         self.tableView?.rowHeight = UITableViewAutomaticDimension;
-        
+        self.tableView?.allowsSelection = true
         // XXX: this is here b/c a totally transparent background does not support scrolling in blank areas
         self.tableView?.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(0.01)
         
@@ -101,7 +106,10 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.settingsList[section].1.count
+        if section != 2 {
+            return self.settingsList[section].1.count
+        }
+        return self.possibleSpaceKeys.count
     }
     
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -123,21 +131,41 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         if let cell = tableView.dequeueReusableCellWithIdentifier("cell") as? DefaultSettingsTableViewCell {
-            let key = self.settingsList[indexPath.section].1[indexPath.row]
             
-            if cell.sw.allTargets().count == 0 {
-                cell.sw.addTarget(self, action: Selector("toggleSetting:"), forControlEvents: UIControlEvents.ValueChanged)
+            if indexPath.section != 2 {
+                let key = self.settingsList[indexPath.section].1[indexPath.row]
+                cell.sw.hidden = false
+                cell.accessoryType = .None
+                if cell.sw.allTargets().count == 0 {
+                    cell.sw.addTarget(self, action: #selector(DefaultSettings.toggleSetting(_:)), forControlEvents: UIControlEvents.ValueChanged)
+                }
+                
+                cell.sw.on = NSUserDefaults.standardUserDefaults().boolForKey(key)
+                cell.label.text = self.settingsNames[key]
+                cell.longLabel.text = self.settingsNotes[key]
+                
+                cell.backgroundColor = (self.darkMode ? cellBackgroundColorDark : cellBackgroundColorLight)
+                cell.label.textColor = (self.darkMode ? cellLabelColorDark : cellLabelColorLight)
+                cell.longLabel.textColor = (self.darkMode ? cellLongLabelColorDark : cellLongLabelColorLight)
+                
+                cell.changeConstraints()
+            }
+            else
+            {
+                cell.label.text = self.possibleSpaceKeys[indexPath.row]
+                cell.sw.hidden = true
+                cell.longLabel.text = ""
+                if let spaceBar = NSUserDefaults.standardUserDefaults().objectForKey(kSpaceKey) as? String {
+                    if spaceBar == cell.label.text {
+                        cell.accessoryType = .Checkmark
+                    }
+                    else{
+                        cell.accessoryType = .None
+                    }
+                }
+                cell.changeConstraints()
             }
             
-            cell.sw.on = NSUserDefaults.standardUserDefaults().boolForKey(key)
-            cell.label.text = self.settingsNames[key]
-            cell.longLabel.text = self.settingsNotes[key]
-            
-            cell.backgroundColor = (self.darkMode ? cellBackgroundColorDark : cellBackgroundColorLight)
-            cell.label.textColor = (self.darkMode ? cellLabelColorDark : cellLabelColorLight)
-            cell.longLabel.textColor = (self.darkMode ? cellLongLabelColorDark : cellLongLabelColorLight)
-
-            cell.changeConstraints()
             
             return cell
         }
@@ -145,6 +173,14 @@ class DefaultSettings: ExtraView, UITableViewDataSource, UITableViewDelegate {
             assert(false, "this is a bad thing that just happened")
             return UITableViewCell()
         }
+    }
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let key = self.settingsList[indexPath.section].0
+        let spaceText = self.possibleSpaceKeys[indexPath.row]
+        NSUserDefaults.standardUserDefaults().setObject(spaceText, forKey: key)
+        NSUserDefaults.standardUserDefaults().synchronize()
+        self.tableView?.reloadSections(NSIndexSet(index: indexPath.section), withRowAnimation: .None)
     }
     
     func updateAppearance(dark: Bool) {

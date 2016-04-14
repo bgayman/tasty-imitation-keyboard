@@ -19,6 +19,7 @@ let kAutoCapitalization = "kAutoCapitalization"
 let kPeriodShortcut = "kPeriodShortcut"
 let kKeyboardClicks = "kKeyboardClicks"
 let kSmallLowercase = "kSmallLowercase"
+let kSpaceKey = "Space Key"
 
 class KeyboardViewController: UIInputViewController {
     
@@ -98,7 +99,8 @@ class KeyboardViewController: UIInputViewController {
             kAutoCapitalization: true,
             kPeriodShortcut: true,
             kKeyboardClicks: false,
-            kSmallLowercase: false
+            kSmallLowercase: false,
+            kSpaceKey:"🦄"
         ])
         
         self.keyboard = defaultKeyboard()
@@ -111,7 +113,7 @@ class KeyboardViewController: UIInputViewController {
         self.forwardingView = ForwardingView(frame: CGRectZero)
         self.view.addSubview(self.forwardingView)
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("defaultsChanged:"), name: NSUserDefaultsDidChangeNotification, object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(KeyboardViewController.defaultsChanged(_:)), name: NSUserDefaultsDidChangeNotification, object: nil)
     }
     
     required init?(coder: NSCoder) {
@@ -127,7 +129,10 @@ class KeyboardViewController: UIInputViewController {
     
     func defaultsChanged(notification: NSNotification) {
         //let defaults = notification.object as? NSUserDefaults
-        self.updateKeyCaps(self.shiftState.uppercase())
+        //self.updateKeyCaps(self.shiftState.uppercase())
+        self.constraintsAdded = false
+        self.keyboard = defaultKeyboard()
+        self.setupLayout()
     }
     
     // without this here kludge, the height constraint for the keyboard does not work for some reason
@@ -319,8 +324,6 @@ class KeyboardViewController: UIInputViewController {
                             keyView.addTarget(self, action: #selector(KeyboardViewController.modeChangeTapped(_:)), forControlEvents: .TouchDown)
                         case Key.KeyType.Settings:
                             keyView.addTarget(self, action: #selector(KeyboardViewController.toggleSettings), forControlEvents: .TouchUpInside)
-                        case Key.KeyType.Space:
-                            keyView.addTarget(self, action: <#T##Selector#>, forControlEvents: <#T##UIControlEvents#>)
                         default:
                             break
                         }
@@ -328,7 +331,7 @@ class KeyboardViewController: UIInputViewController {
                         if key.isCharacter {
                             if UIDevice.currentDevice().userInterfaceIdiom != UIUserInterfaceIdiom.Pad {
                                 keyView.addTarget(self, action: #selector(KeyboardViewController.showPopup(_:)), forControlEvents: [.TouchDown, .TouchDragInside, .TouchDragEnter])
-                                keyView.addTarget(keyView, action: Selector("hidePopup"), forControlEvents: [.TouchDragExit, .TouchCancel])
+                                //keyView.addTarget(keyView, action: #selector("hidePopup"), forControlEvents: [.TouchDragExit, .TouchCancel])
                                 keyView.addTarget(self, action: #selector(KeyboardViewController.hidePopupDelay(_:)), forControlEvents: [.TouchUpInside, .TouchUpOutside, .TouchDragOutside])
                             }
                         }
@@ -645,6 +648,16 @@ class KeyboardViewController: UIInputViewController {
         self.advanceToNextInputMode()
     }
     
+    func randomSpaceBar() {
+        self.keyboard.setSpaceKeyToRandomChar()
+    }
+    
+    func unicornSpaceBar(sender:UILongPressGestureRecognizer){
+        if sender.state == .Ended {
+            self.keyboard.setSpaceKeyToUnicorn()
+        }
+    }
+    
     @IBAction func toggleSettings() {
         // lazy load settings
         if self.settingsView == nil {
@@ -715,7 +728,7 @@ class KeyboardViewController: UIInputViewController {
     
     func characterIsWhitespace(character: Character) -> Bool {
         // there are others, but who cares
-        return (character == " ") || (character == "\n") || (character == "\r") || (character == "\t") || (character == "🦄")
+        return (character == " ") || (character == "\n") || (character == "\r") || (character == "\t") || (character == Character(self.keyboard.spaceKey))
     }
     
     func stringIsWhitespace(string: String?) -> Bool {
@@ -826,7 +839,7 @@ class KeyboardViewController: UIInputViewController {
     func createSettings() -> ExtraView? {
         // note that dark mode is not yet valid here, so we just put false for clarity
         let settingsView = DefaultSettings(globalColors: self.dynamicType.globalColors, darkMode: false, solidColorMode: self.solidColorMode())
-        settingsView.backButton?.addTarget(self, action: Selector("toggleSettings"), forControlEvents: UIControlEvents.TouchUpInside)
+        settingsView.backButton?.addTarget(self, action: #selector(KeyboardViewController.toggleSettings), forControlEvents: UIControlEvents.TouchUpInside)
         return settingsView
     }
 }
