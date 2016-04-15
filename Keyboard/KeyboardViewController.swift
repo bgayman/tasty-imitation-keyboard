@@ -132,7 +132,15 @@ class KeyboardViewController: UIInputViewController {
         //self.updateKeyCaps(self.shiftState.uppercase())
         self.constraintsAdded = false
         self.keyboard = defaultKeyboard()
-        self.setupLayout()
+        lastLayoutBounds = nil
+        self.bannerView?.hidden = false
+        self.forwardingView.removeFromSuperview()
+        self.forwardingView = ForwardingView(frame: CGRectZero)
+        self.view.insertSubview(self.forwardingView, belowSubview: self.settingsView!)
+        self.keyboardHeight = self.heightForOrientation(self.interfaceOrientation, withTopBanner: true)
+        self.forwardingView.resetTrackedViews()
+        self.view.setNeedsLayout()
+        //self.setupLayout()
     }
     
     // without this here kludge, the height constraint for the keyboard does not work for some reason
@@ -184,7 +192,7 @@ class KeyboardViewController: UIInputViewController {
             self.setupKludge()
             
             self.updateKeyCaps(self.shiftState.uppercase())
-            var capsWasSet = self.setCapsIfNeeded()
+            self.setCapsIfNeeded()
             
             self.updateAppearances(self.darkMode())
             self.addInputTraitsObservers()
@@ -441,6 +449,7 @@ class KeyboardViewController: UIInputViewController {
     }
     
     func keyPressedHelper(sender: KeyboardKey) {
+        print(sender)
         if let model = self.layout?.keyForView(sender) {
             self.keyPressed(model)
 
